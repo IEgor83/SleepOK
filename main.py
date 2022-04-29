@@ -1,11 +1,20 @@
 import telebot
 
+from telebot import types
+
 bot = telebot.TeleBot("5112813587:AAHBJwBi5SF8oSpOPpUKCfKu05FvuSVahgw") # универсальный токен бота
 
 hours_1 = None  # объявление переменных, где будут храниться время подъема и сна
 minutes_1 = None
 hours_2 = None
 minutes_2 = None
+
+keyboard = types.InlineKeyboardMarkup()
+key_yes = types.InlineKeyboardButton(text='Да', callback_data='yes')
+keyboard.add(key_yes)
+key_no = types.InlineKeyboardButton(text='Нет', callback_data='no')
+keyboard.add(key_no)
+
 
 @bot.message_handler(commands=['start', 'help']) # если пользователь ввёл команды /start или /help то выполняем функцию
 def send_welcome(message): # выводим сообщение
@@ -29,7 +38,7 @@ def first_message(message):
 			hours_1 = int(s_mes[0])
 			minutes_1 = int(s_mes[1])
 			if (hours_1 <= 24 and hours_1 >= 0) and (minutes_1 < 60 and minutes_1 >= 0):
-				bot.send_message(message.chat.id, f"вы хотите вставать в {hours_1} часов и {minutes_1} минут?")
+				bot.send_message(message.chat.id, text=f"вы хотите вставать в {hours_1} часов и {minutes_1} минут?", reply_markup=keyboard)
 			else:
 				raise ValueError
 		except Exception:
@@ -40,7 +49,14 @@ def first_message(message):
 	else:
 		time_rule(message)
 		return
-	second_message(message) # данные ввелись корректно - идём дальше
+
+@bot.callback_query_handler(func=lambda call: True)
+def call_back_worker(call):
+	if call.data == "yes":
+		second_message(call.message)
+	else:
+		time_rule(call.message)
+		first_message(call.message)
 
 def second_message(message):
 	bot.send_message(message.chat.id, "А теперь, во сколько вы хотели бы ложиться спать?"\
@@ -56,7 +72,7 @@ def second_answer(message): # то же самое, что и предыдуща
 			hours_2 = int(s_mes[0])
 			minutes_2 = int(s_mes[1])
 			if (hours_2 <= 24 and hours_2 >= 0) and (minutes_2 < 60 and minutes_2 >= 0):
-				bot.send_message(message.chat.id, f"вы хотите ложиться в {hours_2} часов и {minutes_2} минут?")
+				bot.send_message(message.chat.id, text=f"вы хотите ложиться в {hours_2} часов и {minutes_2} минут?", reply_markup=keyboard)
 			else:
 				raise ValueError
 		except Exception:
